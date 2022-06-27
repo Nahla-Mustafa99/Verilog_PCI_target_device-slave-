@@ -223,6 +223,58 @@ assign AD = (!not_drive_bus)? memory[address_pointer]:32'hzzzzzzzz;
 
 
                         /////////////////////////Read Code///////////////////////
+                                  if(read_op == 1 && true_address == 1)
+                                    begin
+                                     if(counter == 1)
+                                       begin
+                                        DEVSEL = 0;           //That means we reached the second negative edge after reading the address
+                                        counter = counter + 1;   //number of negative edges = 2
+                                        TRDY = 0;
+                                       end
+                                    if(DEVSELflag == 1'b1) //That means we reached the first negative edge after reading the address
+                                      begin
+                                       counter = counter + 1; //number of negative edges counted = 1
+                                       DEVSELflag = 0;
+                                      end
+                                    if(addressread == 1)
+                                      begin
+                                      if(counter == 1)
+                                         begin
+                                           not_drive_bus = 1;     //Turn around
+                                         end
+                                      if(counter == 2)
+                                       begin
+                                        addressread = 0;
+                                        counter = counter + 1;  //Third Negative Edge after reading the address
+                                        not_drive_bus = 0;      //Reading the data
+                                       end //end of counter==2
+                                     end //end of addressread==1
+                                    if(TRDY == 0)
+                                      begin
+                                      if(setIRDY == 0)
+                                        begin
+                                          if(counter == 3)
+                                            begin
+                                              address_pointer <= saved;  //making the address_pointer equals the location we want to read from at first
+                                               counter <= 0;
+                                            end 
+                                         else
+                                           begin
+                                          address_pointer <= address_pointer + 1;
+                                           end
+                                        end                        
+                                      if(setTARDY == 0 && IRDY == 1)
+                                         begin
+                                           TRDY <= 1;
+                                           DEVSEL <= 1;
+                                           not_drive_bus <= 1;
+                                           setTARDY <= 1;
+                                           read_op <= 0;
+                                           true_address <= 0;  
+                                           end
+                                     end  //end of if(TRDY == 0) 
+                                        
+                                    end //end of if read_op
                             
                            end // end of always 
 
